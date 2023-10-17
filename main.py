@@ -23,7 +23,7 @@ from geopy.distance import great_circle
 
 
 # Cargar los tres DataFrames
-df_ML = pd.read_csv('/Users/benjaminzelaya/Desktop/PF_DS_REVIEWS_AND_RECOMMENDATIONS/Sprint_3/Modelo/df_ML.csv')
+df_ML = pd.read_csv('/Users/benjaminzelaya/Desktop/proyectofinal/df_ML.csv')
 
 
 
@@ -359,7 +359,7 @@ st.markdown('<hr style="border: 2px solid #e74c3c;">', unsafe_allow_html=True)
 
 
     # Imagen o logo más pequeño
-st.image("/Users/benjaminzelaya/Desktop/PGF/PG/PF_DS_REVIEWS_AND_RECOMMENDATIONS/Images/ICOn COnsulting.png", 
+st.image("/Users/benjaminzelaya/Desktop/proyectofinal/Images/ICOn COnsulting.png", 
             caption="©Icon Data Science Consulting",
             width=200,
             use_column_width=False,  # Evita que ocupe todo el ancho de la columna
