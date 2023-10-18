@@ -2,30 +2,31 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import seaborn as sns
-import matplotlib.pyplot as plt
 import plotly.express as px
-from sklearn.preprocessing import LabelEncoder
+import matplotlib.pyplot as plt
+
 from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestRegressor
+from geopy.distance import great_circle
+from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import mean_squared_error
+
 import folium
 from streamlit_folium import folium_static
 from folium.plugins import MarkerCluster
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import cross_val_score, train_test_split
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 from geopy.distance import great_circle
 
-
+def custom_tabs():
+    tabs = st.radio("Selecciona una pestaña:", ("Categoría según niveles de densidad demográfica y Estado seleccionado", "Franquicias según categoría y rango de Promedio de Rating", "Franquicias por Rango de Inversión seleccionado", "Sucursales con mejor rating de la Franquicia Seleccionada", "Predicción de Promedio de Rating de Franquicia"))
+    return tabs
 
 
 # Cargar los tres DataFrames
 df_ML = pd.read_csv('/Users/benjaminzelaya/Desktop/proyectofinal/df_ML.csv')
-
-
 
 # Personalización del tema
 st.set_page_config(
@@ -68,120 +69,119 @@ st.markdown(
 
 )
 
-
 # Imagen o logo más pequeño
 st.image("/Users/benjaminzelaya/Desktop/PGF/PG/PF_DS_REVIEWS_AND_RECOMMENDATIONS/Images/ICOn COnsulting.png", 
         width=200,
         use_column_width=False, 
         output_format='auto')  
 
+# Crear pestañas personalizadas
+selected_tab = custom_tabs()
 
-st.header("Categoria segun niveles de densidad demografica y Estado seleccionado")
+# Pestaña 1: Categoría según niveles de densidad demográfica y Estado seleccionado
+if selected_tab == "Categoría según niveles de densidad demográfica y Estado seleccionado":
+    st.title("Categoría según niveles de densidad demográfica y Estado seleccionado")
+    st.sidebar.title('Selecciona una Categoría de Densidad y un Estado:')
 
-# Barra lateral personalizada
-st.sidebar.title('Selecciona una Categoría de Densidad y un Estado:')
-categoria_deseada = st.sidebar.selectbox("Selecciona una Categoría de Densidad:", df_ML['Categoria_Densidad'].unique())
+    # Barra lateral personalizada
+    categoria_deseada = st.sidebar.selectbox("Selecciona una Categoría de Densidad:", df_ML['Categoria_Densidad'].unique())
 
-# Filtrar el DataFrame para incluir solo las ubicaciones de la Categoría de Densidad seleccionada
-estados_categoria_densidad = df_ML[df_ML['Categoria_Densidad'] == categoria_deseada]
+    # Filtrar el DataFrame para incluir solo las ubicaciones de la Categoría de Densidad seleccionada
+    estados_categoria_densidad = df_ML[df_ML['Categoria_Densidad'] == categoria_deseada]
 
-# Obtener la lista de opciones de estados dentro de la categoría de densidad seleccionada
-opciones_estados = estados_categoria_densidad['Nombre_Estado'].unique()
+    # Obtener la lista de opciones de estados dentro de la categoría de densidad seleccionada
+    opciones_estados = estados_categoria_densidad['Nombre_Estado'].unique()
 
-# Usar un segundo selectbox en la barra lateral para seleccionar un estado dentro de la Categoría de Densidad
-estado_deseado_seccion2 = st.sidebar.selectbox("Selecciona un estado:", opciones_estados)
-
-# Estilo de texto con formato
-st.markdown(f"Las categorías con más sucursales en **{estado_deseado_seccion2}** son:")
-
-# Filtrar franquicias por estado y categoría de densidad
-franquicias_en_estado_seccion1 = df_ML[(df_ML['Nombre_Estado'] == estado_deseado_seccion2) & (df_ML['Categoria_Densidad'] == categoria_deseada)]
-
-# Calcular las categorías con más sucursales 
-categorias_mas_sucursales = franquicias_en_estado_seccion1.groupby('Categoria').size().sort_values(ascending=False).head(5)
+    # Usar un segundo selectbox en la barra lateral para seleccionar un estado dentro de la Categoría de Densidad
+    estado_deseado_seccion2 = st.sidebar.selectbox("Selecciona un estado:", opciones_estados)
 
 
-# Crear el gráfico de barras
-fig = px.bar(
-    categorias_mas_sucursales.reset_index(),
-    x='Categoria',
-    y=0,
-    text=0,
-    title='Cantidad de Sucursales por Categoría',
-    labels={'0': 'Cantidad de Sucursales'}
-)
+    # Filtrar franquicias por estado y categoría de densidad
+    franquicias_en_estado_seccion1 = df_ML[(df_ML['Nombre_Estado'] == estado_deseado_seccion2) & (df_ML['Categoria_Densidad'] == categoria_deseada)]
 
-# Ajustar la apariencia del gráfico
-fig.update_traces(
-    texttemplate='%{text}',  # Etiquetas con el valor de las barras
-    textposition='outside',  # Ubicación de las etiquetas
-    marker_color='royalblue',  # Color de las barras
-    hoverinfo='x+y',  # Información que se muestra al pasar el ratón
-    hovertemplate='Categoría: %{x}<br>Cantidad de Sucursales: %{y}',  # Formato de información al pasar el ratón
-)
+    # Calcular las categorías con más sucursales
+    categorias_mas_sucursales = franquicias_en_estado_seccion1.groupby('Categoria').size().sort_values(ascending=False).head(5)
 
-# Personalizar el diseño
-fig.update_layout(
-    xaxis_title='',  # Título del eje X
-    yaxis_title='Cantidad de Sucursales',  # Título del eje Y
-    xaxis_tickangle=-45,  # Ángulo de las etiquetas del eje X
-    margin_b=100,  # Ajuste del margen inferior
-    showlegend=False  # Ocultar la leyenda
-)
+    # Crear el gráfico de barras
+    fig = px.bar(
+        categorias_mas_sucursales.reset_index(),
+        x='Categoria',
+        y=0,
+        text=0,
+        title='Cantidad de Sucursales por Categoría',
+        labels={'0': 'Cantidad de Sucursales'}
+    )
 
-# Mostrar el gráfico en Streamlit
-st.plotly_chart(fig)
+    # Ajustar la apariencia del gráfico
+    fig.update_traces(
+        texttemplate='%{text}',  # Etiquetas con el valor de las barras
+        textposition='outside',  # Ubicación de las etiquetas
+        marker_color='royalblue',  # Color de las barras
+        hoverinfo='x+y',  # Información que se muestra al pasar el ratón
+        hovertemplate='Categoría: %{x}<br>Cantidad de Sucursales: %{y}',  # Formato de información al pasar el ratón
+    )
+
+    # Personalizar el diseño
+    fig.update_layout(
+        xaxis_title='',  # Título del eje X
+        yaxis_title='Cantidad de Sucursales',  # Título del eje Y
+        xaxis_tickangle=-45,  # Ángulo de las etiquetas del eje X
+        margin_b=100,  # Ajuste del margen inferior
+        showlegend=False  # Ocultar la leyenda
+    )
+
+# Agregar un botón para obtener los resultados
+    if st.sidebar.button('Obtener Resultados'):
+        # Mostrar el gráfico en Streamlit
+        st.plotly_chart(fig)
 
 
-# Gráfico de área
-st.subheader("Distribución de Categorías")
-fig = px.area(categorias_mas_sucursales, x=categorias_mas_sucursales.index, y=0, title="Distribución de Categorías")
-st.plotly_chart(fig)
 # Agregar separador visual
-st.markdown('<hr style="border: 2px solid #e74c3c;">', unsafe_allow_html=True)
+    st.markdown('<hr style="border: 2px solid #e74c3c;">', unsafe_allow_html=True)
 
 
 #######################
-# Sección 2: Recomendación de Inversión en Franquicias
-st.header("Franquicias según categoría y rango de Promedio de Rating")
-
-# Barra lateral personalizada
-st.sidebar.title('Selecciona una Categoria y rango de Rating')
+# Pestaña 2: Franquicias según categoría y rango de Promedio de Rating
+elif selected_tab == "Franquicias según categoría y rango de Promedio de Rating":
+    st.title("Franquicias según categoría y rango de Promedio de Rating")
+    st.sidebar.title('Selecciona una Categoria y rango de Rating')
 
 # Campos de entrada de usuario en la barra lateral
-categoria_seleccionada = st.sidebar.selectbox("Seleccione una categoría de franquicia:", df_ML['Categoria'].unique())
-promedio_rating_min = st.sidebar.number_input("Promedio mínimo de rating:", value=1.0, step=0.1)
-promedio_rating_max = st.sidebar.number_input("Promedio máximo de rating:", value=5.0, step=0.1)
+    categoria_seleccionada = st.sidebar.selectbox("Seleccione una categoría de franquicia:", df_ML['Categoria'].unique())
+    promedio_rating_min = st.sidebar.number_input("Promedio mínimo de rating:", value=1.0, step=0.1)
+    promedio_rating_max = st.sidebar.number_input("Promedio máximo de rating:", value=5.0, step=0.1)
 
-# Botón para obtener las recomendaciones
-if st.sidebar.button('Obtener Recomendaciones', key='obtener_recomendaciones_button'):
-    # Filtrar franquicias por categoría y rango de promedio de rating
-    franquicias_filtradas = df_ML[
-        (df_ML['Promedio_Rating'] >= promedio_rating_min) &
-        (df_ML['Promedio_Rating'] <= promedio_rating_max) &
-        (df_ML['Categoria'] == categoria_seleccionada)
-    ]
+    # Botón para obtener las recomendaciones
+    if st.sidebar.button('Obtener Recomendaciones', key='obtener_recomendaciones_button'):
+        # Filtrar franquicias por categoría y rango de promedio de rating
+        franquicias_filtradas = df_ML[
+            (df_ML['Promedio_Rating'] >= promedio_rating_min) &
+            (df_ML['Promedio_Rating'] <= promedio_rating_max) &
+            (df_ML['Categoria'] == categoria_seleccionada)
+        ]
 
-    # Ordenar franquicias por promedio de rating descendente y eliminar duplicados en "Nombre_Franquicia"
-    franquicias_recomendadas = franquicias_filtradas.drop_duplicates(subset=['Nombre_Franquicia']).nlargest(10, 'Promedio_Rating')
+        # Ordenar franquicias por promedio de rating descendente y eliminar duplicados en "Nombre_Franquicia"
+        franquicias_recomendadas = franquicias_filtradas.drop_duplicates(subset=['Nombre_Franquicia']).nlargest(10, 'Promedio_Rating')
 
-    # Crear un gráfico de barras interactivas con Plotly
-    fig = px.bar(franquicias_recomendadas, x='Promedio_Rating', y='Nombre_Franquicia', orientation='h',
-                 labels={'Nombre_Franquicia': 'Nombre de Franquicia'},
-                 title='Franquicias Recomendadas')
+        # Crear un gráfico de barras interactivas con Plotly
+        fig = px.bar(franquicias_recomendadas, x='Promedio_Rating', y='Nombre_Franquicia', orientation='h',
+                    labels={'Nombre_Franquicia': 'Nombre de Franquicia'},
+                    title='Franquicias Recomendadas')
 
-    # Mostrar el gráfico en Streamlit
-    st.plotly_chart(fig)
+        # Mostrar el gráfico en Streamlit
+        st.plotly_chart(fig)
 
 
 # Agregar separador visual
-st.markdown('<hr style="border: 2px solid #e74c3c;">', unsafe_allow_html=True)
+    st.markdown('<hr style="border: 2px solid #e74c3c;">', unsafe_allow_html=True)
 
 ##################################
 
-# Seccion 3
+# # Seccion 3
+# Pestaña 3: Franquicias por Rango de Inversión seleccionado
+elif selected_tab == "Franquicias por Rango de Inversión seleccionado":
+    st.title("Franquicias por Rango de Inversión seleccionado")
 def main(df_ML):
-    st.header("Franquicias por Rango de Inversión seleccionado")
     st.sidebar.title('Franquicias Recomendadas por Rango de Inversión:')
 
     # Entrada para el presupuesto mínimo y máximo
@@ -239,12 +239,13 @@ if __name__ == '__main__':
     main(df_ML)
 
 # Agregar separador visual
-st.markdown('<hr style="border: 2px solid #e74c3c;">', unsafe_allow_html=True)
+    st.markdown('<hr style="border: 2px solid #e74c3c;">', unsafe_allow_html=True)
 
 
-############################################
-# seccion 4
-st.header('Sucursales con mejor rating de la Franquicia Seleccionada')
+# ############################################
+# Pestaña 4: Sucursales con mejor rating de la Franquicia Seleccionada
+elif selected_tab == "Sucursales con mejor rating de la Franquicia Seleccionada":
+    st.title("Sucursales con mejor rating de la Franquicia Seleccionada")
 
 df_ML['Caracteristicas'] = df_ML['Nombre_Estado'] + ' ' + df_ML['Categoria']
 
@@ -263,8 +264,8 @@ def get_recommendations(nombre_franquicia, cosine_sim=cosine_sim):
         # Obtener las 10 franquicias más similares
         sim_scores = cosine_sim[df_combined_final_franquicia.index[0]]
 
-        # Obtener los índices de las franquicias recomendadas
-        franquicias_indices = sim_scores.argsort()[::-1][1:11]
+        # Cambia el número de recomendaciones deseadas (por ejemplo, 20 en lugar de 10)
+        franquicias_indices = sim_scores.argsort()[::-1][1:21]
 
         # Filtrar las recomendaciones para que solo sean de la misma franquicia
         recomendaciones = df_ML.iloc[franquicias_indices]
@@ -287,90 +288,106 @@ def main():
     franquicias_con_suficientes_sucursales = df_ML['Nombre_Franquicia'].value_counts()[df_ML['Nombre_Franquicia'].value_counts() >= min_sucursales].index.tolist()
 
     if franquicias_con_suficientes_sucursales:
-                # Crea un selectbox solo con las franquicias que cumplen con el criterio
-                nombre_franquicia_ejemplo = st.sidebar.selectbox('Seleccione una franquicia:', franquicias_con_suficientes_sucursales)
+        # Crea un selectbox solo con las franquicias que cumplen con el criterio
+        nombre_franquicia_ejemplo = st.sidebar.selectbox('Seleccione una franquicia:', franquicias_con_suficientes_sucursales)
 
-                # Obtener la lista de opciones de franquicias desde la columna 'Nombre_Franquicia' de tu DataFrame
-                opciones_franquicias = df_ML['Nombre_Franquicia'].unique()
+        # Obtener la lista de opciones de franquicias desde la columna 'Nombre_Franquicia' de tu DataFrame
+        opciones_franquicias = df_ML['Nombre_Franquicia'].unique()
 
-                # Inicializar recomendaciones
-                recomendaciones = None
+        # Inicializar recomendaciones
+        recomendaciones = None
 
+        # Botón principal para obtener recomendaciones
+        if st.sidebar.button('Obtener Recomendaciones', key='obtener_recomendaciones_button_sidebar'):
+            recomendaciones = get_recommendations(nombre_franquicia_ejemplo)
 
-            # Botón principal para obtener recomendaciones
-    if st.sidebar.button('Obtener Recomendaciones', key='obtener_recomendaciones_button_sidebar'):
-                recomendaciones = get_recommendations(nombre_franquicia_ejemplo)
-
-    if recomendaciones is not None:
-                if isinstance(recomendaciones, pd.DataFrame):
-
-                    map = folium.Map(location=[recomendaciones.iloc[0]['Latitud'], recomendaciones.iloc[0]['Longitud']], zoom_start=10)
-
-                    for _, row in recomendaciones.iterrows():
-                        popup_content = f"Nombre Franquicia: {row['Nombre_Franquicia']}<br>Nombre Estado: {row['Nombre_Estado']}<br>Promedio Rating: {row['Promedio_Rating']}<br>Latitud: {row['Latitud']}<br>Longitud: {row['Longitud']}"
-                        if row['Promedio_Rating'] == recomendaciones['Promedio_Rating'].max():
-                    # Usar un color rojo para resaltar la mejor sucursal
-                            icon = folium.Icon(color='red')
-                        else:
-                            icon = None
-
-                        folium.Marker(
-                            location=[row['Latitud'], row['Longitud']],
-                            popup=folium.Popup(popup_content, max_width=300),  # Muestra información adicional en el popup
-                            icon=icon  # Establecer el icono personalizado para resaltar
-                        ).add_to(map)
-
-                    st.write('Mapa de Sucursales:')
-                    folium_static(map)
-
-
-        # Resaltar la mejor opción
-    if recomendaciones is not None and not recomendaciones.empty:
-            best_option = recomendaciones.iloc[0]
+        if recomendaciones is not None and not isinstance(recomendaciones, str):  # Verifica que las recomendaciones no sean un mensaje de error
             map = folium.Map(location=[recomendaciones.iloc[0]['Latitud'], recomendaciones.iloc[0]['Longitud']], zoom_start=10)
 
             for _, row in recomendaciones.iterrows():
                 popup_content = f"Nombre Franquicia: {row['Nombre_Franquicia']}<br>Nombre Estado: {row['Nombre_Estado']}<br>Promedio Rating: {row['Promedio_Rating']}<br>Latitud: {row['Latitud']}<br>Longitud: {row['Longitud']}"
                 if row['Promedio_Rating'] == recomendaciones['Promedio_Rating'].max():
-            # Utiliza un color rojo para resaltar la mejor sucursal
+                    # Usar un color rojo para resaltar la mejor sucursal
                     icon = folium.Icon(color='red')
                 else:
                     icon = None
 
                 folium.Marker(
                     location=[row['Latitud'], row['Longitud']],
-                    popup=folium.Popup(popup_content, max_width=300),  # Muestra información adicional en el cuadro emergente
-                    icon=icon  # Establece un icono personalizado para resaltar
+                    popup=folium.Popup(popup_content, max_width=300),
+                    icon=icon
                 ).add_to(map)
 
-            # Destaca la mejor opción
-            st.write(f"*La Sucursal indicada con color Rojo con el mejor promedio de rating de {best_option['Nombre_Franquicia']}, está ubicada en el Estado de {best_option['Nombre_Estado']}.")
-
-    else:
+            st.write('Mapa de Sucursales:')
+            folium_static(map)
+        else:
             st.write('No se encontraron recomendaciones para la franquicia seleccionada.')
-
-
 
 if __name__ == '__main__':
     main()
 
+
 # Agregar separador visual
-st.markdown('<hr style="border: 2px solid #e74c3c;">', unsafe_allow_html=True)
+    st.markdown('<hr style="border: 2px solid #e74c3c;">', unsafe_allow_html=True)
+
+# Pestaña 5: Predicción de Promedio de Rating de Franquicia
+elif selected_tab == "Predicción de Promedio de Rating de Franquicia":
+    st.title("Predicción de Promedio de Rating de Franquicia")
+
+# Elimina la columna 'Categoria_Densidad'
+df_ML = df_ML.drop('Categoria_Densidad', axis=1)
+
+# Define las columnas del dataset
+columnas = ['Latitud', 'Longitud', 'Min_Inversion', 'Max_Inversion', 'Total_Poblacion']
+
+# Divide el dataset en características (X) y el valor a predecir (y)
+X = df_ML[columnas]
+y = df_ML['Promedio_Rating']  # Suponemos que deseas predecir el promedio de rating
+
+# Divide los datos en un conjunto de entrenamiento y prueba
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Entrena el modelo RandomForest para regresión
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Función para realizar una predicción personalizada
+@st.cache_data()
+def custom_franchise_prediction(lat, lon, min_inversion, max_inversion, poblacion):
+    # Realiza una predicción personalizada utilizando las características proporcionadas
+    features = [lat, lon, min_inversion, max_inversion, poblacion]
+    prediction = model.predict([features])[0]
+    return prediction
+
+# Configuración de la aplicación Streamlit
+st.title('Predicción de Promedio de Rating de Franquicia')
+
+# Barra lateral para ingresar las características
+st.sidebar.markdown("### Ingrese las Características para la Predicción")
+lat = st.sidebar.slider('Latitud:', df_ML['Latitud'].min(), df_ML['Latitud'].max(), step=0.001)
+lon = st.sidebar.slider('Longitud:', df_ML['Longitud'].min(), df_ML['Longitud'].max(), step=0.001)
+min_inversion = st.sidebar.number_input('Inversión Mínima:', min_value=0)
+max_inversion = st.sidebar.number_input('Inversión Máxima:', min_value=0)
+poblacion = st.sidebar.number_input('Población:', min_value=0)
+
+# Botón para realizar la predicción personalizada
+if st.sidebar.button('Obtener Predicción Personalizada'):
+    prediction = custom_franchise_prediction(lat, lon, min_inversion, max_inversion, poblacion)
+    st.write(f'Predicción del Promedio de Rating: {prediction:.2f}')
+
+# Agregar separador visual
+    st.markdown('<hr style="border: 2px solid #e74c3c;">', unsafe_allow_html=True)
 
 
-    # Imagen o logo más pequeño
-st.image("/Users/benjaminzelaya/Desktop/proyectofinal/Images/ICOn COnsulting.png", 
-            caption="©Icon Data Science Consulting",
-            width=200,
-            use_column_width=False,  # Evita que ocupe todo el ancho de la columna
-            output_format='auto')  # Ajusta el formato de la imagen automáticamente
+    st.image("/Users/benjaminzelaya/Desktop/proyectofinal/Images/ICOn COnsulting.png", 
+        caption="©Icon Data Science Consulting",
+        width=200,
+        use_column_width=False,
+        output_format='auto')
 
- 
-    # Pie de página personalizado
-st.markdown(
+
+    st.markdown(
         """<div style="background-color:#F8F8F8;padding:10px;border-radius:5px;">
         <p style="text-align:center;">©Icon Data Science Consulting</p></div>""",
         unsafe_allow_html=True
     )
-
-
