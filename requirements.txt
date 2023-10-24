@@ -14,6 +14,7 @@ jsonschema
 jsonschema-specifications
 markdown-it-py
 MarkupSafe
+Matplotlib
 mdurl
 numpy
 packaging
@@ -35,6 +36,7 @@ rpds-py
 six
 smmap
 streamlit
+seaborn
 tenacity
 toml
 toolz
