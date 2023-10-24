@@ -5,8 +5,10 @@ cachetools
 certifi
 charset-normalizer
 click
+folium
 gitdb
 GitPython
+geopy
 idna
 importlib-metadata
 Jinja2
