@@ -5,7 +5,6 @@ cachetools
 certifi
 charset-normalizer
 click
-folium
 gitdb
 GitPython
 geopy
@@ -38,6 +37,7 @@ rpds-py
 six
 smmap
 streamlit
+streamlit_folium
 scikit-learn
 seaborn
 tenacity
