@@ -29,7 +29,7 @@ def custom_tabs():
 
 
 # Cargar los tres DataFrames
-df_ML = pd.read_csv('/Users/benjaminzelaya/Desktop/proyectofinal/df_ML.csv')
+df_ML = pd.read_csv('df_ML.csv')
 
 # Personalización del tema
 st.set_page_config(
