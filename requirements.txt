@@ -59,7 +59,6 @@ plotly==5.14.1
 prompt-toolkit==3.0.36
 protobuf==3.20.3
 psutil==5.9.4
-spure-eval==0.2.2
 pyarrow==11.0.0
 pycryptodome==3.18.0
 pydantic==1.10.9
