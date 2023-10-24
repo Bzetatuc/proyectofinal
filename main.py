@@ -23,6 +23,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 from geopy.distance import great_circle
 
+st.set_option('browser.gatherUsageStats', False)
+
 def custom_tabs():
     tabs = st.radio("Selecciona una pestaña:", ("Categoría según niveles de densidad demográfica y Estado seleccionado", "Franquicias según categoría y rango de Promedio de Rating", "Franquicias por Rango de Inversión seleccionado", "Sucursales con mejor rating de la Franquicia Seleccionada", "Predicción de Promedio de Rating de Franquicia"))
     return tabs
