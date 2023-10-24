@@ -36,6 +36,7 @@ rpds-py
 six
 smmap
 streamlit
+scikit-learn
 seaborn
 tenacity
 toml
